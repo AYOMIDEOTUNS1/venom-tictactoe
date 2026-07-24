@@ -117,29 +117,75 @@ function switchPlayer() {
 }
 
 function aiMove() {
+    if (!gameActive) return;
 
-    if (!running) return;
+    let move;
 
-    let empty = [];
+    switch (aiDifficulty) {
+        case "easy":
+            move = randomMove();
+            break;
 
-    for (let i = 0; i < board.length; i++) {
+        case "medium":
+            move = Math.random() < 0.5
+                ? bestMove()
+                : randomMove();
+            break;
 
-        if (board[i] === "")
-            empty.push(i);
+        case "hard":
+            move = bestMove();
+            break;
 
+        case "impossible":
+            move = bestMove();
+            break;
+
+        default:
+            move = randomMove();
     }
 
-    if (empty.length === 0) return;
+    if (move !== -1 && move !== null) {
+        makeMove(move, aiPlayer);
+    }
+}
 
-    let move =
-        empty[Math.floor(Math.random() * empty.length)];
+function bestMove() {
+    // 1. Win if possible
+    for (let i = 0; i < board.length; i++) {
+        if (board[i] === "") {
+            board[i] = aiPlayer;
+            if (checkWinner(aiPlayer)) {
+                board[i] = "";
+                return i;
+            }
+            board[i] = "";
+        }
+    }
 
-    board[move] = "O";
+    // 2. Block the player from winning
+    for (let i = 0; i < board.length; i++) {
+        if (board[i] === "") {
+            board[i] = humanPlayer;
+            if (checkWinner(humanPlayer)) {
+                board[i] = "";
+                return i;
+            }
+            board[i] = "";
+        }
+    }
 
-    cells[move].textContent = "O";
-    cells[move].classList.add("o");
+    // 3. Take the center
+    if (board[4] === "") return 4;
 
-    checkWinner();
+    // 4. Take a corner
+    const corners = [0, 2, 6, 8].filter(i => board[i] === "");
+    if (corners.length) {
+        return corners[Math.floor(Math.random() * corners.length)];
+    }
+
+    // 5. Take any remaining side
+    return randomMove();
+}
 
 }
 
