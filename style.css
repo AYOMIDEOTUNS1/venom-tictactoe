@@ -239,4 +239,23 @@ font-size:52px;
 
 }
 
+/* Board Size Selector */
+#boardSizeBox {
+    margin-top: 10px;
+}
 
+#boardSize {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #00ff88;
+    border-radius: 8px;
+    background: #111;
+    color: #00ff88;
+    font-size: 16px;
+    outline: none;
+    cursor: pointer;
+}
+
+#boardSize:hover {
+    box-shadow: 0 0 10px #00ff88;
+}
