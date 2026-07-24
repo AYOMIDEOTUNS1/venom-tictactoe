@@ -1,8 +1,7 @@
 // VENOM TIC TAC TOE
-// SCRIPT.JS PART 1/4
+// SCRIPT.JS
 
 let size = 3;
-
 let board = [];
 let currentPlayer = "X";
 let running = true;
@@ -11,19 +10,17 @@ let xWins = 0;
 let oWins = 0;
 let draws = 0;
 
+let cells;
+
 const HUMAN = "X";
 const AI = "O";
 
-let cells;
+const gameBoard = document.getElementById("gameBoard");
 
 const gameMode = document.getElementById("gameMode");
 const difficulty = document.getElementById("difficulty");
 const difficultyBox = document.getElementById("difficultyBox");
 const boardSize = document.getElementById("boardSize");
-
-const playerX = document.getElementById("playerX");
-const playerO = document.getElementById("playerO");
-const versus = document.getElementById("versus");
 
 const statusText = document.getElementById("status");
 
@@ -41,413 +38,219 @@ boardSize.addEventListener("change", changeBoardSize);
 restartBtn.addEventListener("click", restartRound);
 newGameBtn.addEventListener("click", newGame);
 
-
 function createBoard(){
-
-    const gameBoard = document.getElementById("gameBoard");
 
     gameBoard.innerHTML = "";
 
+    board = [];
+
     for(let i = 0; i < size * size; i++){
+
+        board.push("");
 
         let cell = document.createElement("div");
 
         cell.classList.add("cell");
         cell.dataset.index = i;
 
-        gameBoard.appendChild(cell);
+        cell.addEventListener("click", cellClicked);
 
+        gameBoard.appendChild(cell);
     }
 
-
     cells = document.querySelectorAll(".cell");
-
-
-    cells.forEach(cell=>{
-        cell.addEventListener("click", cellClicked);
-    });
-
 }
+
 
 function changeBoardSize(){
 
     size = Number(boardSize.value);
 
-    createBoard();
-
     restartRound();
-
 }
 
 
 function changeMode(){
 
-    if(gameMode.value === "ai"){
-
+    if(gameMode.value === "AI"){
         difficultyBox.style.display = "block";
-
-        playerO.value = "🤖 AI";
-        playerO.readOnly = true;
-
-        versus.textContent = "VS 🤖 AI";
-
     }else{
-
         difficultyBox.style.display = "none";
-
-        if(playerO.value === "🤖 AI"){
-            playerO.value = "Player O";
-        }
-
-        playerO.readOnly = false;
-
-        versus.textContent = "Player X VS Player O";
-
     }
 
     restartRound();
-
 }
-
 
 function cellClicked(){
 
     let index = this.dataset.index;
 
-
-    if(!running) return;
-
-    if(board[index] !== "") return;
-
-
-    makeMove(index,currentPlayer);
-
-
-    if(
-        gameMode.value === "ai" &&
-        running &&
-        currentPlayer === AI
-    ){
-
-        setTimeout(aiMove,400);
-
+    if(board[index] !== "" || !running){
+        return;
     }
 
-}
+    board[index] = currentPlayer;
+
+    this.textContent = currentPlayer;
 
 
-function makeMove(index,player){
+    if(checkWinner()){
 
-    board[index] = player;
-
-    cells[index].textContent = player;
-
-    cells[index].classList.add(player.toLowerCase());
-
-
-    checkWinner();
-
-
-    if(running){
-
-        currentPlayer =
-        currentPlayer === "X" ? "O" : "X";
-
-
-        statusText.textContent =
-        currentPlayer === "X"
-        ? playerX.value + "'s Turn"
-        : playerO.value + "'s Turn";
-
-    }
-
-}
-
-function generateWinPatterns(){
-
-    let patterns = [];
-
-
-    // rows
-    for(let r = 0; r < size; r++){
-
-        let row = [];
-
-        for(let c = 0; c < size; c++){
-
-            row.push(r * size + c);
-
+        if(currentPlayer === "X"){
+            xWins++;
+            scoreX.textContent = xWins;
+        }else{
+            oWins++;
+            scoreO.textContent = oWins;
         }
 
-        patterns.push(row);
-
+        statusText.textContent = currentPlayer + " Wins!";
+        running = false;
+        return;
     }
-
-
-
-    // columns
-    for(let c = 0; c < size; c++){
-
-        let column = [];
-
-        for(let r = 0; r < size; r++){
-
-            column.push(r * size + c);
-
-        }
-
-        patterns.push(column);
-
-    }
-
-
-
-    // diagonal 1
-
-    let diag1 = [];
-
-    for(let i = 0; i < size; i++){
-
-        diag1.push(i * size + i);
-
-    }
-
-    patterns.push(diag1);
-
-
-
-    // diagonal 2
-
-    let diag2 = [];
-
-    for(let i = 0; i < size; i++){
-
-        diag2.push(i * size + (size - 1 - i));
-
-    }
-
-    patterns.push(diag2);
-
-
-
-    return patterns;
-
-}
-
-
-
-function checkWinner(){
-
-    let patterns = generateWinPatterns();
-
-
-    for(let pattern of patterns){
-
-        let first = board[pattern[0]];
-
-
-        if(first !== ""){
-
-            let win = pattern.every(
-                index => board[index] === first
-            );
-
-
-            if(win){
-
-                running = false;
-
-
-                if(first === "X"){
-
-                    xWins++;
-
-                    scoreX.textContent = xWins;
-
-                    statusText.textContent =
-                    playerX.value + " Wins!";
-
-                }else{
-
-                    oWins++;
-
-                    scoreO.textContent = oWins;
-
-                    statusText.textContent =
-                    playerO.value + " Wins!";
-
-                }
-
-                return;
-
-            }
-
-        }
-
-    }
-
 
 
     if(!board.includes("")){
 
-        running = false;
-
         draws++;
-
         scoreDraw.textContent = draws;
 
         statusText.textContent = "Draw!";
-
+        running = false;
+        return;
     }
 
+
+    currentPlayer =
+    currentPlayer === "X" ? "O" : "X";
+
+
+    if(currentPlayer === AI && gameMode.value === "AI"){
+        setTimeout(aiMove,500);
+    }
 }
 
 
+function checkWinner(){
 
-function restartRound(){
+    for(let i=0;i<size;i++){
 
-    board = Array(size * size).fill("");
+        let row = [];
 
-    running = true;
+        for(let j=0;j<size;j++){
+            row.push(board[i*size+j]);
+        }
 
-    currentPlayer = "X";
-
-
-    cells.forEach(cell=>{
-
-        cell.textContent = "";
-
-        cell.classList.remove("x");
-        cell.classList.remove("o");
-        cell.classList.remove("win");
-
-    });
+        if(row.every(v=>v!=="" && v===row[0])){
+            return true;
+        }
+    }
 
 
-    statusText.textContent =
-    playerX.value + "'s Turn";
+    for(let i=0;i<size;i++){
 
+        let col=[];
+
+        for(let j=0;j<size;j++){
+            col.push(board[j*size+i]);
+        }
+
+        if(col.every(v=>v!=="" && v===col[0])){
+            return true;
+        }
+    }
+
+
+    let diag1=[];
+    let diag2=[];
+
+
+    for(let i=0;i<size;i++){
+
+        diag1.push(board[i*size+i]);
+        diag2.push(board[i*size+(size-i-1)]);
+    }
+
+
+    return (
+        diag1.every(v=>v!=="" && v===diag1[0]) ||
+        diag2.every(v=>v!=="" && v===diag2[0])
+    );
 }
 
 function aiMove(){
 
     let empty = [];
 
-    for(let i = 0; i < board.length; i++){
-
-        if(board[i] === ""){
-
+    board.forEach((v,i)=>{
+        if(v===""){
             empty.push(i);
-
         }
+    });
 
-    }
 
-
-    if(empty.length === 0) return;
+    if(empty.length===0) return;
 
 
     let move;
 
 
-    if(difficulty.value === "easy"){
+    if(difficulty.value==="easy"){
 
-        move = empty[
-            Math.floor(Math.random() * empty.length)
-        ];
+        move = empty[Math.floor(Math.random()*empty.length)];
 
-    }
+    }else{
 
-
-    else if(difficulty.value === "medium"){
-
-        move = findBestMove();
-
-
-        if(move === undefined){
-
-            move = empty[
-                Math.floor(Math.random() * empty.length)
-            ];
-
-        }
+        move = empty[Math.floor(Math.random()*empty.length)];
 
     }
 
 
-    else{
+    board[move] = AI;
 
-        move = findBestMove();
+    cells[move].textContent = AI;
 
 
-        if(move === undefined){
+    if(checkWinner()){
 
-            move = empty[
-                Math.floor(Math.random() * empty.length)
-            ];
+        oWins++;
+        scoreO.textContent=oWins;
 
-        }
+        statusText.textContent="O Wins!";
+        running=false;
 
+        return;
     }
 
 
-    makeMove(move,"O");
-
+    currentPlayer="X";
 }
 
 
+function restartRound(){
 
-function findBestMove(){
+    currentPlayer="X";
+    running=true;
 
-    // simple AI attack + block
+    statusText.textContent="Your Turn";
 
-    for(let i = 0; i < board.length; i++){
-
-        if(board[i] === ""){
-
-            board[i] = "O";
-
-            if(isWinning("O")){
-
-                board[i] = "";
-
-                return i;
-
-            }
-
-            board[i] = "";
-
-        }
-
-    }
-
-
-
-    for(let i = 0; i < board.length; i++){
-
-        if(board[i] === ""){
-
-            board[i] = "X";
-
-            if(isWinning("X")){
-
-                board[i] = "";
-
-                return i;
-
-            }
-
-            board[i] = "";
-
-        }
-
-    }
-
+    createBoard();
 }
 
 
+function newGame(){
 
-function isWinning(player){
+    xWins=0;
+    oWins=0;
+    draws=0;
 
-    let patterns = generateWin
+    scoreX.textContent=0;
+    scoreO.textContent=0;
+    scoreDraw.textContent=0;
+
+    restartRound();
+}
+
+
+createBoard();
 
