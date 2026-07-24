@@ -119,7 +119,6 @@ grid-template-columns:repeat(3,1fr);
 gap:12px;
 margin:25px 0;
 }
-
 .cell{
 aspect-ratio:1;
 background:#181818;
@@ -238,5 +237,4 @@ font-size:52px;
 }
 
 }
-
-
+   

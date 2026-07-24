@@ -1,27 +1,32 @@
+// =======================
+// VENOM TIC TAC TOE
+// =======================
+
 const cells = document.querySelectorAll(".cell");
 const statusText = document.getElementById("status");
-const restartBtn = document.getElementById("restart");
-const modeSelect = document.getElementById("mode");
-const difficultySelect = document.getElementById("difficulty");
-const playerXInput = document.getElementById("playerX");
-const playerOInput = document.getElementById("playerO");
+
+const gameMode = document.getElementById("gameMode");
+const difficulty = document.getElementById("difficulty");
+const difficultyBox = document.getElementById("difficultyBox");
+
+const playerX = document.getElementById("playerX");
+const playerO = document.getElementById("playerO");
+const versus = document.getElementById("versus");
+
+const restartBtn = document.getElementById("restartBtn");
+const newGameBtn = document.getElementById("newGameBtn");
 
 const scoreX = document.getElementById("scoreX");
 const scoreO = document.getElementById("scoreO");
-const drawScore = document.getElementById("drawScore");
+const scoreDraw = document.getElementById("scoreDraw");
 
-const nameX = document.getElementById("nameX");
-const nameO = document.getElementById("nameO");
-
-let board = ["", "", "", "", "", "", "", "", ""];
+let board = ["","","","","","","","",""];
 let currentPlayer = "X";
-let gameRunning = true;
+let running = true;
 
-let scores = {
-    X: 0,
-    O: 0,
-    draw: 0
-};
+let xWins = 0;
+let oWins = 0;
+let draws = 0;
 
 const winPatterns = [
     [0,1,2],
@@ -34,71 +39,117 @@ const winPatterns = [
     [2,4,6]
 ];
 
-startGame();
+gameMode.addEventListener("change", changeMode);
+restartBtn.addEventListener("click", restartRound);
+newGameBtn.addEventListener("click", newGame);
 
-function startGame(){
+cells.forEach(cell=>{
+    cell.addEventListener("click", cellClicked);
+});
 
-    cells.forEach(cell=>{
-        cell.addEventListener("click", cellClicked);
-    });
+changeMode();
 
-    restartBtn.addEventListener("click", restartGame);
+function changeMode() {
 
-    updateNames();
+    if (gameMode.value === "ai") {
 
-    statusText.textContent = `${nameX.textContent}'s Turn`;
+        difficultyBox.style.display = "block";
 
-}
+        playerO.value = "🤖 AI";
+        playerO.readOnly = true;
 
-function updateNames(){
+        versus.textContent = "VS 🤖 AI";
 
-    nameX.textContent =
-        playerXInput.value.trim() || "Player X";
+    } else {
 
-    if(modeSelect.value==="ai"){
-        nameO.textContent="AI";
-    }else{
-        nameO.textContent=
-        playerOInput.value.trim() || "Player O";
+        difficultyBox.style.display = "none";
+
+        playerO.readOnly = false;
+
+        if (playerO.value === "🤖 AI")
+            playerO.value = "Player O";
+
+        versus.textContent = "Player X VS Player O";
+
     }
 
+    newGame();
 }
+
 function cellClicked() {
 
     const index = this.dataset.index;
 
-    if (board[index] !== "" || !gameRunning) return;
+    if (!running) return;
+
+    if (board[index] !== "") return;
 
     board[index] = currentPlayer;
+
     this.textContent = currentPlayer;
+
+    this.classList.add(currentPlayer.toLowerCase());
 
     checkWinner();
 
-    if (
-        gameRunning &&
-        modeSelect.value === "ai" &&
-        currentPlayer === "O"
-    ) {
-        setTimeout(aiMove, 400);
+    if (!running) return;
+
+    if (gameMode.value === "ai" && currentPlayer === "O") {
+
+        setTimeout(aiMove, 350);
+
     }
+
 }
 
-function changePlayer() {
+function switchPlayer() {
+
     currentPlayer = currentPlayer === "X" ? "O" : "X";
 
-    statusText.textContent =
+    const name =
         currentPlayer === "X"
-        ? `${nameX.textContent}'s Turn`
-        : `${nameO.textContent}'s Turn`;
+        ? playerX.value
+        : playerO.value;
+
+    statusText.textContent =
+        name + "'s Turn";
+
+}
+
+function aiMove() {
+
+    if (!running) return;
+
+    let empty = [];
+
+    for (let i = 0; i < board.length; i++) {
+
+        if (board[i] === "")
+            empty.push(i);
+
+    }
+
+    if (empty.length === 0) return;
+
+    let move =
+        empty[Math.floor(Math.random() * empty.length)];
+
+    board[move] = "O";
+
+    cells[move].textContent = "O";
+    cells[move].classList.add("o");
+
+    checkWinner();
+
 }
 
 function checkWinner() {
 
-    let roundWon = false;
+    let winner = null;
 
     for (const pattern of winPatterns) {
 
-        const [a,b,c] = pattern;
+        const [a, b, c] = pattern;
 
         if (
             board[a] &&
@@ -106,45 +157,94 @@ function checkWinner() {
             board[b] === board[c]
         ) {
 
-            roundWon = true;
+            winner = board[a];
 
             cells[a].classList.add("win");
             cells[b].classList.add("win");
             cells[c].classList.add("win");
 
             break;
+
         }
+
     }
 
-    if (roundWon) {
+    if (winner) {
 
-        gameRunning = false;
+        running = false;
 
-        if (currentPlayer === "X") {
-            scores.X++;
-            scoreX.textContent = scores.X;
+        if (winner === "X") {
+
+            xWins++;
+            scoreX.textContent = xWins;
+
+            statusText.textContent =
+                playerX.value + " Wins!";
+
         } else {
-            scores.O++;
-            scoreO.textContent = scores.O;
+
+            oWins++;
+            scoreO.textContent = oWins;
+
+            statusText.textContent =
+                playerO.value + " Wins!";
+
         }
 
-        statusText.textContent =
-            `${currentPlayer === "X" ? nameX.textContent : nameO.textContent} Wins!`;
-
         return;
+
     }
 
     if (!board.includes("")) {
 
-        gameRunning = false;
+        running = false;
 
-        scores.draw++;
-        drawScore.textContent = scores.draw;
+        draws++;
+        scoreDraw.textContent = draws;
 
-        statusText.textContent = "It's a Draw!";
+        statusText.textContent = "Draw!";
 
         return;
+
     }
 
-    changePlayer();
+    switchPlayer();
+
+}
+
+function restartRound() {
+
+    board = ["","","","","","","","",""];
+
+    running = true;
+
+    currentPlayer = "X";
+
+    cells.forEach(cell => {
+
+        cell.textContent = "";
+
+        cell.classList.remove("x");
+        cell.classList.remove("o");
+        cell.classList.remove("win");
+
+    });
+
+    statusText.textContent =
+        playerX.value + "'s Turn";
+
+}
+
+function newGame() {
+
+    xWins = 0;
+    oWins = 0;
+    draws = 0;
+
+    scoreX.textContent = 0;
+    scoreO.textContent = 0;
+    scoreDraw.textContent = 0;
+
+    restartRound();
+
 }
