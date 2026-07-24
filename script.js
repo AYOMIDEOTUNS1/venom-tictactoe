@@ -1,26 +1,9 @@
 // VENOM TIC TAC TOE
-// script.js
-// PART 1 OF 4
+// SCRIPT.JS PART 1/4
 
-const cells = document.querySelectorAll(".cell");
-const statusText = document.getElementById("status");
+let size = 3;
 
-const gameMode = document.getElementById("gameMode");
-const difficulty = document.getElementById("difficulty");
-const difficultyBox = document.getElementById("difficultyBox");
-
-const playerX = document.getElementById("playerX");
-const playerO = document.getElementById("playerO");
-const versus = document.getElementById("versus");
-
-const restartBtn = document.getElementById("restartBtn");
-const newGameBtn = document.getElementById("newGameBtn");
-
-const scoreX = document.getElementById("scoreX");
-const scoreO = document.getElementById("scoreO");
-const scoreDraw = document.getElementById("scoreDraw");
-
-let board = ["","","","","","","","",""];
+let board = [];
 let currentPlayer = "X";
 let running = true;
 
@@ -31,310 +14,223 @@ let draws = 0;
 const HUMAN = "X";
 const AI = "O";
 
-const winPatterns = [
-    [0,1,2],
-    [3,4,5],
-    [6,7,8],
-    [0,3,6],
-    [1,4,7],
-    [2,5,8],
-    [0,4,8],
-    [2,4,6]
-];
+let cells;
+
+const gameMode = document.getElementById("gameMode");
+const difficulty = document.getElementById("difficulty");
+const difficultyBox = document.getElementById("difficultyBox");
+const boardSize = document.getElementById("boardSize");
+
+const playerX = document.getElementById("playerX");
+const playerO = document.getElementById("playerO");
+const versus = document.getElementById("versus");
+
+const statusText = document.getElementById("status");
+
+const restartBtn = document.getElementById("restartBtn");
+const newGameBtn = document.getElementById("newGameBtn");
+
+const scoreX = document.getElementById("scoreX");
+const scoreO = document.getElementById("scoreO");
+const scoreDraw = document.getElementById("scoreDraw");
+
 
 gameMode.addEventListener("change", changeMode);
+boardSize.addEventListener("change", changeBoardSize);
+
 restartBtn.addEventListener("click", restartRound);
 newGameBtn.addEventListener("click", newGame);
 
-cells.forEach(cell=>{
-    cell.addEventListener("click", cellClicked);
-});
 
-changeMode();
+function createBoard(){
+
+    const gameBoard = document.getElementById("gameBoard");
+
+    gameBoard.innerHTML = "";
+
+    for(let i = 0; i < size * size; i++){
+
+        let cell = document.createElement("div");
+
+        cell.classList.add("cell");
+        cell.dataset.index = i;
+
+        gameBoard.appendChild(cell);
+
+    }
+
+
+    cells = document.querySelectorAll(".cell");
+
+
+    cells.forEach(cell=>{
+        cell.addEventListener("click", cellClicked);
+    });
+
+}
+
+function changeBoardSize(){
+
+    size = Number(boardSize.value);
+
+    createBoard();
+
+    restartRound();
+
+}
+
 
 function changeMode(){
 
-    if(gameMode.value==="ai"){
+    if(gameMode.value === "ai"){
 
-        difficultyBox.style.display="block";
-        playerO.value="🤖 AI";
-        playerO.readOnly=true;
-        versus.textContent="VS 🤖 AI";
+        difficultyBox.style.display = "block";
+
+        playerO.value = "🤖 AI";
+        playerO.readOnly = true;
+
+        versus.textContent = "VS 🤖 AI";
 
     }else{
 
-        difficultyBox.style.display="none";
+        difficultyBox.style.display = "none";
 
-        if(playerO.value==="🤖 AI"){
-            playerO.value="Player O";
+        if(playerO.value === "🤖 AI"){
+            playerO.value = "Player O";
         }
 
-        playerO.readOnly=false;
-        versus.textContent="Player X VS Player O";
+        playerO.readOnly = false;
+
+        versus.textContent = "Player X VS Player O";
+
     }
 
-    newGame();
+    restartRound();
+
 }
+
 
 function cellClicked(){
 
-    const index=this.dataset.index;
+    let index = this.dataset.index;
+
 
     if(!running) return;
-    if(board[index]!="") return;
+
+    if(board[index] !== "") return;
+
 
     makeMove(index,currentPlayer);
 
+
     if(
-        gameMode.value==="ai" &&
+        gameMode.value === "ai" &&
         running &&
-        currentPlayer===AI
+        currentPlayer === AI
     ){
-        setTimeout(aiMove,300);
+
+        setTimeout(aiMove,400);
+
     }
 
 }
+
 
 function makeMove(index,player){
 
-    board[index]=player;
+    board[index] = player;
 
-    cells[index].textContent=player;
+    cells[index].textContent = player;
+
     cells[index].classList.add(player.toLowerCase());
+
 
     checkWinner();
 
+
     if(running){
-        currentPlayer=currentPlayer==="X"?"O":"X";
 
-        statusText.textContent=
-            (currentPlayer==="X"
-            ?playerX.value
-            :playerO.value)
-            +"'s Turn";
-    }
-
-}
-
-// PART 2 OF 4
-// AI SYSTEM
-
-function aiMove(){
-
-    if(!running) return;
-
-    let move;
-
-    if(difficulty.value==="easy"){
-
-        move=randomMove();
-
-    } 
-    else if(difficulty.value==="medium"){
-
-        move=Math.random()<0.5
-        ? bestMove()
-        : randomMove();
-
-    }
-    else if(
-        difficulty.value==="hard" ||
-        difficulty.value==="impossible"
-    ){
-
-        move=bestMove();
-
-    }
-    else{
-
-        move=randomMove();
-
-    }
+        currentPlayer =
+        currentPlayer === "X" ? "O" : "X";
 
 
-    if(move!==-1){
-
-        makeMove(move,AI);
+        statusText.textContent =
+        currentPlayer === "X"
+        ? playerX.value + "'s Turn"
+        : playerO.value + "'s Turn";
 
     }
 
 }
 
+function generateWinPatterns(){
 
-function randomMove(){
-
-    let empty=[];
-
-    for(let i=0;i<board.length;i++){
-
-        if(board[i]===""){
-            empty.push(i);
-        }
-
-    }
-
-    if(empty.length===0)
-        return -1;
+    let patterns = [];
 
 
-    return empty[
-        Math.floor(Math.random()*empty.length)
-    ];
+    // rows
+    for(let r = 0; r < size; r++){
 
-}
+        let row = [];
 
+        for(let c = 0; c < size; c++){
 
-// SMART AI MOVE
-
-function bestMove(){
-
-    let bestScore=-Infinity;
-    let move;
-
-
-    for(let i=0;i<board.length;i++){
-
-        if(board[i]===""){
-
-            board[i]=AI;
-
-            let score=minimax(
-                board,
-                0,
-                false
-            );
-
-            board[i]="";
-
-
-            if(score>bestScore){
-
-                bestScore=score;
-                move=i;
-
-            }
+            row.push(r * size + c);
 
         }
 
-    }
-
-    return move;
-
-}
-
-
-// MINIMAX ALGORITHM
-
-function minimax(newBoard,depth,isMaximizing){
-
-    let result=evaluateBoard();
-
-    if(result!==null){
-
-        return result;
+        patterns.push(row);
 
     }
 
 
-    if(isMaximizing){
 
-        let bestScore=-Infinity;
+    // columns
+    for(let c = 0; c < size; c++){
 
+        let column = [];
 
-        for(let i=0;i<newBoard.length;i++){
+        for(let r = 0; r < size; r++){
 
-            if(newBoard[i]===""){
-
-                newBoard[i]=AI;
-
-                let score=minimax(
-                    newBoard,
-                    depth+1,
-                    false
-                );
-
-                newBoard[i]="";
-
-
-                bestScore=Math.max(
-                    score,
-                    bestScore
-                );
-
-            }
+            column.push(r * size + c);
 
         }
 
-        return bestScore;
-
-    }
-    else{
-
-        let bestScore=Infinity;
-
-
-        for(let i=0;i<newBoard.length;i++){
-
-            if(newBoard[i]===""){
-
-                newBoard[i]=HUMAN;
-
-                let score=minimax(
-                    newBoard,
-                    depth+1,
-                    true
-                );
-
-                newBoard[i]="";
-
-
-                bestScore=Math.min(
-                    score,
-                    bestScore
-                );
-
-            }
-
-        }
-
-        return bestScore;
-
-    }
-
-}
-
-// PART 3 OF 4
-// WIN CHECKING SYSTEM
-
-function evaluateBoard(){
-
-    for(const pattern of winPatterns){
-
-        const [a,b,c]=pattern;
-
-
-        if(
-            board[a] &&
-            board[a]===board[b] &&
-            board[a]===board[c]
-        ){
-
-            if(board[a]===AI)
-                return 10;
-
-            if(board[a]===HUMAN)
-                return -10;
-
-        }
+        patterns.push(column);
 
     }
 
 
-    if(!board.includes(""))
-        return 0;
+
+    // diagonal 1
+
+    let diag1 = [];
+
+    for(let i = 0; i < size; i++){
+
+        diag1.push(i * size + i);
+
+    }
+
+    patterns.push(diag1);
 
 
-    return null;
+
+    // diagonal 2
+
+    let diag2 = [];
+
+    for(let i = 0; i < size; i++){
+
+        diag2.push(i * size + (size - 1 - i));
+
+    }
+
+    patterns.push(diag2);
+
+
+
+    return patterns;
 
 }
 
@@ -342,64 +238,51 @@ function evaluateBoard(){
 
 function checkWinner(){
 
-    let winner=null;
+    let patterns = generateWinPatterns();
 
 
-    for(const pattern of winPatterns){
+    for(let pattern of patterns){
 
-        const [a,b,c]=pattern;
-
-
-        if(
-            board[a] &&
-            board[a]===board[b] &&
-            board[a]===board[c]
-        ){
-
-            winner=board[a];
+        let first = board[pattern[0]];
 
 
-            cells[a].classList.add("win");
-            cells[b].classList.add("win");
-            cells[c].classList.add("win");
+        if(first !== ""){
+
+            let win = pattern.every(
+                index => board[index] === first
+            );
 
 
-            break;
+            if(win){
 
-        }
-
-    }
+                running = false;
 
 
+                if(first === "X"){
 
-    if(winner){
+                    xWins++;
 
-        running=false;
+                    scoreX.textContent = xWins;
 
+                    statusText.textContent =
+                    playerX.value + " Wins!";
 
-        if(winner==="X"){
+                }else{
 
-            xWins++;
+                    oWins++;
 
-            scoreX.textContent=xWins;
+                    scoreO.textContent = oWins;
 
-            statusText.textContent=
-                playerX.value+" Wins!";
+                    statusText.textContent =
+                    playerO.value + " Wins!";
 
-        }
-        else{
+                }
 
-            oWins++;
+                return;
 
-            scoreO.textContent=oWins;
-
-            statusText.textContent=
-                playerO.value+" Wins!";
+            }
 
         }
-
-
-        return;
 
     }
 
@@ -407,16 +290,13 @@ function checkWinner(){
 
     if(!board.includes("")){
 
-        running=false;
+        running = false;
 
         draws++;
 
-        scoreDraw.textContent=draws;
+        scoreDraw.textContent = draws;
 
-        statusText.textContent="Draw!";
-
-
-        return;
+        statusText.textContent = "Draw!";
 
     }
 
@@ -426,27 +306,16 @@ function checkWinner(){
 
 function restartRound(){
 
-    board=[
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
-    ];
+    board = Array(size * size).fill("");
 
+    running = true;
 
-    running=true;
-
-    currentPlayer="X";
+    currentPlayer = "X";
 
 
     cells.forEach(cell=>{
 
-        cell.textContent="";
+        cell.textContent = "";
 
         cell.classList.remove("x");
         cell.classList.remove("o");
@@ -455,28 +324,130 @@ function restartRound(){
     });
 
 
+    statusText.textContent =
+    playerX.value + "'s Turn";
 
-    statusText.textContent=
-        playerX.value+"'s Turn";
+}
+
+function aiMove(){
+
+    let empty = [];
+
+    for(let i = 0; i < board.length; i++){
+
+        if(board[i] === ""){
+
+            empty.push(i);
+
+        }
+
+    }
+
+
+    if(empty.length === 0) return;
+
+
+    let move;
+
+
+    if(difficulty.value === "easy"){
+
+        move = empty[
+            Math.floor(Math.random() * empty.length)
+        ];
+
+    }
+
+
+    else if(difficulty.value === "medium"){
+
+        move = findBestMove();
+
+
+        if(move === undefined){
+
+            move = empty[
+                Math.floor(Math.random() * empty.length)
+            ];
+
+        }
+
+    }
+
+
+    else{
+
+        move = findBestMove();
+
+
+        if(move === undefined){
+
+            move = empty[
+                Math.floor(Math.random() * empty.length)
+            ];
+
+        }
+
+    }
+
+
+    makeMove(move,"O");
 
 }
 
-// PART 4 OF 4
-// NEW GAME + STARTUP
 
 
-function newGame(){
+function findBestMove(){
 
-    xWins=0;
-    oWins=0;
-    draws=0;
+    // simple AI attack + block
+
+    for(let i = 0; i < board.length; i++){
+
+        if(board[i] === ""){
+
+            board[i] = "O";
+
+            if(isWinning("O")){
+
+                board[i] = "";
+
+                return i;
+
+            }
+
+            board[i] = "";
+
+        }
+
+    }
 
 
-    scoreX.textContent=0;
-    scoreO.textContent=0;
-    scoreDraw.textContent=0;
 
+    for(let i = 0; i < board.length; i++){
 
-    restartRound();
+        if(board[i] === ""){
+
+            board[i] = "X";
+
+            if(isWinning("X")){
+
+                board[i] = "";
+
+                return i;
+
+            }
+
+            board[i] = "";
+
+        }
+
+    }
 
 }
+
+
+
+function isWinning(player){
+
+    let patterns = generateWin
+
